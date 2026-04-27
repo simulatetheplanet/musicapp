@@ -393,8 +393,8 @@ function ProfilePanel({
             {listeningStatus?.title} - {listeningStatus?.artist}
           </p>
           <p className="text-xs text-muted-foreground">
-            {listeningStatus?.source === "musicapp"
-              ? "Playing through musicapp"
+            {listeningStatus?.source === "archiv"
+              ? "Playing through Archiv"
               : `${profile.lastFm.username} on Last.fm`}
           </p>
         </div>
@@ -489,7 +489,7 @@ function BannerAd({ hidden }: { hidden: boolean }) {
   );
 }
 
-export function MusicAppShell() {
+export function ArchivShell() {
   const [profile, setProfile] = React.useState(currentUserProfile);
   const [songs, setSongs] = React.useState(sampleSongs);
   const [messages, setMessages] = React.useState(sampleMessages);
@@ -662,7 +662,7 @@ export function MusicAppShell() {
               <Headphones data-icon="inline-start" />
             </div>
             <div>
-              <p className="text-lg font-semibold">musicapp</p>
+              <p className="text-lg font-semibold">Archiv</p>
               <p className="text-xs text-muted-foreground">verified music sharing</p>
             </div>
           </div>
@@ -891,7 +891,7 @@ export function MusicAppShell() {
               <Badge variant={sourceBadgeVariant(activeSong.source)}>{sourceLabels[activeSong.source]}</Badge>
             </div>
             <p className="truncate text-sm text-muted-foreground">
-              {activeSong.artist} - Last.fm now playing ready
+              {activeSong.artist} - Archiv now playing ready
             </p>
             <div className="mt-2 h-1 rounded-full bg-muted">
               <div className="h-1 w-1/3 rounded-full bg-primary" />

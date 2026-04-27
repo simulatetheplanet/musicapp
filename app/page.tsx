@@ -1,5 +1,5 @@
-import { MusicAppShell } from "@/components/musicapp-shell";
+import { ArchivShell } from "@/components/archiv-shell";
 
 export default function Home() {
-  return <MusicAppShell />;
+  return <ArchivShell />;
 }

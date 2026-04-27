@@ -31,7 +31,7 @@ export type Song = {
 };
 
 export type ListeningStatus = {
-  source: "musicapp" | "lastfm";
+  source: "archiv" | "lastfm";
   title: string;
   artist: string;
   isNowPlaying: boolean;

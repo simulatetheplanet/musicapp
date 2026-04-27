@@ -5,7 +5,7 @@ import type {
   UserProfile,
 } from "@/lib/product-types";
 
-export const takenUsernames = ["minacoast", "rowankey", "sablefm", "musicapp"];
+export const takenUsernames = ["minacoast", "rowankey", "sablefm", "archiv"];
 
 export const currentUserProfile: UserProfile = {
   id: "user-current",

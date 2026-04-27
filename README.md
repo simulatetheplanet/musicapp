@@ -1,6 +1,6 @@
-# musicapp
+# Archiv
 
-musicapp is a private-first social music platform.
+Archiv is a private-first social music platform for **Archiv.stream**.
 
 The first product milestone is **Verified Music Sharing**:
 
@@ -10,7 +10,7 @@ This repository is designed for a free local development phase first. The code i
 
 ## What This App Is Building Toward
 
-musicapp should feel like:
+Archiv should feel like:
 
 - 50% social media
 - 50% music platform
@@ -98,8 +98,8 @@ Install these before running the app:
 ## Clone The Repository
 
 ```powershell
-git clone https://github.com/simulatetheplanet/musicapp.git
-cd musicapp
+git clone https://github.com/simulatetheplanet/Archiv.git
+cd Archiv
 ```
 
 If you are already working from the local Codex workspace, the project is here:
@@ -139,7 +139,7 @@ The `.env` file is local only and must not be committed to GitHub.
 Expected local values:
 
 ```env
-DATABASE_URL="postgresql://musicapp:musicapp@localhost:5432/musicapp?schema=public"
+DATABASE_URL="postgresql://archiv:archiv@localhost:5432/archiv?schema=public"
 REDIS_URL="redis://localhost:6379"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="replace-with-a-local-development-secret"
@@ -229,7 +229,7 @@ http://localhost:3000
 
 When the app loads, you should see:
 
-- `musicapp` in the left navigation
+- `Archiv` in the left navigation
 - a search bar
 - **From Your Personal Archive**
 - **Public Uploads**

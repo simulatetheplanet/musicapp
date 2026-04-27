@@ -1,8 +1,8 @@
 import type { ListeningStatus, Song } from "@/lib/product-types";
 
-export function createMusicAppListeningStatus(song: Song): ListeningStatus {
+export function createArchivListeningStatus(song: Song): ListeningStatus {
   return {
-    source: "musicapp",
+    source: "archiv",
     title: song.title,
     artist: song.artist,
     isNowPlaying: true,
@@ -18,7 +18,7 @@ export function chooseProfileListeningStatus({
   lastFmRecentTrack?: ListeningStatus;
 }) {
   if (appSong) {
-    return createMusicAppListeningStatus(appSong);
+    return createArchivListeningStatus(appSong);
   }
 
   return lastFmRecentTrack;

@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "musicapp",
-  description: "Private-first social music sharing for verified users.",
+  title: "Archiv",
+  description: "Archiv.stream is private-first social music sharing for verified users.",
 };
 
 export default function RootLayout({

@@ -1,6 +1,6 @@
-# musicapp Architecture
+# Archiv Architecture
 
-musicapp is being built as a free local development app first, with clear replacement points for paid production services later.
+Archiv is being built as a free local development app first, with clear replacement points for paid production services later.
 
 ## Current Development Choices
 
@@ -36,4 +36,4 @@ The app uses internal provider files so the product code calls one business acti
 - Membership entitlements separate Free and Plus behavior before billing is added.
 - Free members can receive banner and between-song ads.
 - Plus members are represented as ad-free, with doubled message file limits and custom emoji access.
-- Last.fm listening status supports musicapp now-playing first, then Last.fm recent-track fallback.
+- Last.fm listening status supports Archiv now-playing first, then Last.fm recent-track fallback.
