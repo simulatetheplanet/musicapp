@@ -1,0 +1,31 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Next.js
+.next
+out
+tsconfig.tsbuildinfo
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Local uploads and generated media
+storage
+uploads
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+test-results
+playwright-report
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode
