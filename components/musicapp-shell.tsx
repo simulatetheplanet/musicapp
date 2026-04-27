@@ -4,11 +4,16 @@ import {
   Archive,
   BadgeCheck,
   Bell,
+  CalendarDays,
   Copy,
+  Crown,
   Forward,
+  Gem,
   Headphones,
   Heart,
+  Image as ImageIcon,
   ListMusic,
+  Megaphone,
   MessageCircle,
   MoreHorizontal,
   Pause,
@@ -28,10 +33,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { peopleYouShouldFollow, sampleMessages, sampleSongs } from "@/lib/sample-data";
+import { getMembershipEntitlements } from "@/lib/membership/entitlements";
+import { getTenureBadge } from "@/lib/membership/tenure-badges";
+import {
+  currentUserProfile,
+  peopleYouShouldFollow,
+  sampleMessages,
+  sampleSongs,
+  takenUsernames,
+} from "@/lib/sample-data";
+import { chooseProfileListeningStatus } from "@/lib/listening/listening-status";
 import { searchAccessibleSongs } from "@/lib/search/search-accessible-songs";
-import type { Message, Song, SongSource } from "@/lib/product-types";
-import { validateMusicUpload } from "@/lib/validation/music-upload";
+import type {
+  MembershipPlan,
+  Message,
+  Song,
+  SongSource,
+  UserProfile,
+} from "@/lib/product-types";
+import {
+  validateMusicUpload,
+  validateSocialImageUpload,
+} from "@/lib/validation/music-upload";
+import {
+  normalizeUsername,
+  validateUniqueUsername,
+} from "@/lib/validation/username";
 
 const sourceLabels: Record<SongSource, string> = {
   archive: "From Your Personal Archive",
@@ -59,6 +86,16 @@ function getExtension(fileName: string): Song["fileType"] {
   }
 
   return "mp3";
+}
+
+function getImageExtension(fileName: string): UserProfile["bannerFileType"] {
+  const extension = fileName.split(".").pop()?.toLowerCase();
+
+  if (extension === "jpg" || extension === "jpeg" || extension === "gif") {
+    return extension;
+  }
+
+  return "png";
 }
 
 function formatTitleFromFile(fileName: string) {
@@ -182,11 +219,13 @@ function SongCard({
 
 function MessageBubble({
   message,
+  canUseCustomEmojis,
   onReact,
   onPlay,
   onPlayNext,
 }: {
   message: Message;
+  canUseCustomEmojis: boolean;
   onReact: (messageId: string, reaction: string) => void;
   onPlay: (song: Song) => void;
   onPlayNext: (song: Song) => void;
@@ -203,6 +242,13 @@ function MessageBubble({
     const file = event.target.files?.[0];
 
     if (!file) {
+      return;
+    }
+
+    const validation = validateSocialImageUpload({ name: file.name, size: file.size });
+
+    if (!validation.allowed) {
+      setCustomReaction("invalid image");
       return;
     }
 
@@ -272,22 +318,179 @@ function MessageBubble({
               {reaction}
             </button>
           ))}
-          <label className="cursor-pointer rounded-md px-2 py-1 text-xs hover:bg-muted">
-            GIF
-            <input
-              className="sr-only"
-              type="file"
-              accept=".png,.jpg,.jpeg,.gif"
-              onChange={handleCustomEmoji}
-            />
-          </label>
+          {canUseCustomEmojis ? (
+            <label className="cursor-pointer rounded-md px-2 py-1 text-xs hover:bg-muted">
+              GIF
+              <input
+                className="sr-only"
+                type="file"
+                accept=".png,.jpg,.jpeg,.gif"
+                onChange={handleCustomEmoji}
+              />
+            </label>
+          ) : (
+            <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">Plus</span>
+          )}
         </div>
       ) : null}
     </div>
   );
 }
 
+function ProfilePanel({
+  profile,
+  activeSong,
+  usernameInput,
+  usernameStatus,
+  bannerStatus,
+  onUsernameChange,
+  onSaveUsername,
+  onBannerUpload,
+}: {
+  profile: UserProfile;
+  activeSong: Song;
+  usernameInput: string;
+  usernameStatus: ReturnType<typeof validateUniqueUsername>;
+  bannerStatus: string;
+  onUsernameChange: (value: string) => void;
+  onSaveUsername: () => void;
+  onBannerUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  const listeningStatus = chooseProfileListeningStatus({
+    appSong: activeSong,
+    lastFmRecentTrack: profile.lastFm.recentTrack,
+  });
+  const badge = getTenureBadge(profile.memberSince);
+  const bannerStyle = profile.bannerUrl.startsWith("blob:")
+    ? { backgroundImage: `url(${profile.bannerUrl})` }
+    : { background: profile.bannerUrl };
+
+  return (
+    <div className="rounded-lg border border-border bg-card">
+      <div className="h-24 rounded-t-lg bg-cover bg-center" style={bannerStyle} />
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-lg font-semibold">{profile.displayName}</h2>
+              {profile.verified ? <BadgeCheck className="text-primary" data-icon="inline-start" /> : null}
+            </div>
+            <p className="text-sm text-muted-foreground">@{profile.username}</p>
+          </div>
+          <Badge variant="outline">{badge.label}</Badge>
+        </div>
+
+        <p className="mt-3 text-sm text-muted-foreground">{profile.bio}</p>
+
+        <div className="mt-4 rounded-lg border border-border bg-background p-3">
+          <div className="flex items-center gap-2">
+            <Radio data-icon="inline-start" />
+            <p className="text-xs font-semibold tracking-normal">
+              {listeningStatus?.isNowPlaying ? "NOW PLAYING" : "MOST RECENT"}
+            </p>
+          </div>
+          <p className="mt-1 truncate text-sm font-medium">
+            {listeningStatus?.title} - {listeningStatus?.artist}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {listeningStatus?.source === "musicapp"
+              ? "Playing through musicapp"
+              : `${profile.lastFm.username} on Last.fm`}
+          </p>
+        </div>
+
+        <div className="mt-4 grid gap-3">
+          <label className="grid gap-2">
+            <span className="text-xs font-medium">Unique username</span>
+            <div className="flex gap-2">
+              <Input value={usernameInput} onChange={(event) => onUsernameChange(event.target.value)} />
+              <Button size="sm" disabled={!usernameStatus.available} onClick={onSaveUsername}>
+                Save
+              </Button>
+            </div>
+            <span className="text-xs text-muted-foreground">{usernameStatus.reason}</span>
+          </label>
+
+          <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">
+            <ImageIcon data-icon="inline-start" />
+            Change banner
+            <input className="sr-only" type="file" accept=".png,.jpg,.jpeg,.gif" onChange={onBannerUpload} />
+          </label>
+          <p className="text-xs text-muted-foreground">{bannerStatus}</p>
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <CalendarDays data-icon="inline-start" />
+            Member since {new Date(profile.memberSince).toLocaleDateString()}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MembershipPanel({
+  plan,
+  onPlanChange,
+}: {
+  plan: MembershipPlan;
+  onPlanChange: (plan: MembershipPlan) => void;
+}) {
+  const entitlements = getMembershipEntitlements(plan);
+
+  return (
+    <div className="rounded-lg border border-border bg-background p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold">{entitlements.label}</h2>
+          <p className="text-xs text-muted-foreground">
+            {plan === "plus" ? "$5/month preview" : "Ad-supported access"}
+          </p>
+        </div>
+        {plan === "plus" ? <Crown className="text-primary" data-icon="inline-start" /> : <Megaphone data-icon="inline-start" />}
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button variant={plan === "free" ? "default" : "outline"} size="sm" onClick={() => onPlanChange("free")}>
+          Free
+        </Button>
+        <Button variant={plan === "plus" ? "default" : "outline"} size="sm" onClick={() => onPlanChange("plus")}>
+          Plus
+        </Button>
+      </div>
+
+      <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
+        <p>DM file limit: {entitlements.dmFileLimitMb} MB</p>
+        <p>Group file limit: {entitlements.groupChatFileLimitMb} MB</p>
+        <p>Custom emojis: {entitlements.canUseCustomEmojis ? "enabled" : "Plus only"}</p>
+        <p>Ads: {entitlements.hasAds ? "banner and between-song ads" : "ad free"}</p>
+      </div>
+    </div>
+  );
+}
+
+function BannerAd({ hidden }: { hidden: boolean }) {
+  if (hidden) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3">
+      <div className="flex items-center gap-3">
+        <div className="flex size-10 items-center justify-center rounded-md bg-accent text-accent-foreground">
+          <Megaphone data-icon="inline-start" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">Sponsored banner</p>
+          <p className="text-xs text-muted-foreground">Free members help fund future platform costs.</p>
+        </div>
+      </div>
+      <Badge variant="outline">Ad</Badge>
+    </div>
+  );
+}
+
 export function MusicAppShell() {
+  const [profile, setProfile] = React.useState(currentUserProfile);
   const [songs, setSongs] = React.useState(sampleSongs);
   const [messages, setMessages] = React.useState(sampleMessages);
   const [source, setSource] = React.useState<"all" | SongSource>("all");
@@ -298,11 +501,31 @@ export function MusicAppShell() {
   const [queue, setQueue] = React.useState<Song[]>([sampleSongs[3], sampleSongs[2]]);
   const [uploadStatus, setUploadStatus] = React.useState("Email verified. Uploads are enabled.");
   const [messageDraft, setMessageDraft] = React.useState("");
+  const [usernameInput, setUsernameInput] = React.useState(currentUserProfile.username);
+  const [bannerStatus, setBannerStatus] = React.useState("Banner accepts .png, .jpg, .jpeg, or .gif.");
+  const bannerObjectUrlRef = React.useRef<string | null>(null);
 
+  const entitlements = getMembershipEntitlements(profile.membershipPlan);
+  const usernameStatus = React.useMemo(
+    () => validateUniqueUsername(usernameInput, takenUsernames),
+    [usernameInput],
+  );
   const accessibleSongs = React.useMemo(
     () => searchAccessibleSongs({ songs, query, source }),
     [songs, query, source],
   );
+
+  React.useEffect(() => {
+    return () => {
+      if (bannerObjectUrlRef.current) {
+        URL.revokeObjectURL(bannerObjectUrlRef.current);
+      }
+    };
+  }, []);
+
+  function setMembershipPlan(plan: MembershipPlan) {
+    setProfile((current) => ({ ...current, membershipPlan: plan }));
+  }
 
   function toggleSongInSet(songId: string, setter: React.Dispatch<React.SetStateAction<Set<string>>>) {
     setter((current) => {
@@ -316,6 +539,10 @@ export function MusicAppShell() {
 
       return next;
     });
+  }
+
+  function handlePlaySong(song: Song) {
+    setActiveSong(song);
   }
 
   function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -351,6 +578,45 @@ export function MusicAppShell() {
     setSongs((current) => [uploadedSong, ...current]);
     setActiveSong(uploadedSong);
     setUploadStatus(`${file.name} added to From Your Personal Archive.`);
+  }
+
+  function handleBannerUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const validation = validateSocialImageUpload({ name: file.name, size: file.size });
+
+    if (!validation.allowed) {
+      setBannerStatus(validation.reason);
+      return;
+    }
+
+    if (bannerObjectUrlRef.current) {
+      URL.revokeObjectURL(bannerObjectUrlRef.current);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    bannerObjectUrlRef.current = previewUrl;
+    setProfile((current) => ({
+      ...current,
+      bannerUrl: previewUrl,
+      bannerFileType: getImageExtension(file.name),
+    }));
+    setBannerStatus(`${file.name} applied as profile banner.`);
+  }
+
+  function saveUsername() {
+    if (!usernameStatus.available) {
+      return;
+    }
+
+    setProfile((current) => ({
+      ...current,
+      username: normalizeUsername(usernameInput),
+    }));
   }
 
   function handleReact(messageId: string, reaction: string) {
@@ -389,7 +655,7 @@ export function MusicAppShell() {
 
   return (
     <main className="min-h-screen pb-28">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_320px]">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_340px]">
         <aside className="border-b border-border bg-card/80 p-4 lg:border-b-0 lg:border-r">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-md bg-foreground text-background">
@@ -422,6 +688,14 @@ export function MusicAppShell() {
               <p className="text-sm font-medium">Email verified</p>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">Uploads, messages, comments, and follows are active.</p>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-border bg-background p-3">
+            <div className="flex items-center gap-2">
+              <Gem data-icon="inline-start" />
+              <p className="text-sm font-medium">Last.fm ready</p>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Now playing and scrobbles use the connected profile.</p>
           </div>
         </aside>
 
@@ -477,6 +751,8 @@ export function MusicAppShell() {
             <p className="mt-2 text-sm text-muted-foreground">{uploadStatus}</p>
           </div>
 
+          <BannerAd hidden={!entitlements.hasAds} />
+
           <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="flex flex-col gap-3">
               {accessibleSongs.map((song) => (
@@ -486,7 +762,7 @@ export function MusicAppShell() {
                   isActive={activeSong.id === song.id}
                   isLiked={likedSongs.has(song.id)}
                   isReposted={repostedSongs.has(song.id)}
-                  onPlay={setActiveSong}
+                  onPlay={handlePlaySong}
                   onLike={(songId) => toggleSongInSet(songId, setLikedSongs)}
                   onRepost={(songId) => toggleSongInSet(songId, setRepostedSongs)}
                   onPlayNext={addToQueue}
@@ -510,8 +786,9 @@ export function MusicAppShell() {
                   <MessageBubble
                     key={message.id}
                     message={message}
+                    canUseCustomEmojis={entitlements.canUseCustomEmojis}
                     onReact={handleReact}
-                    onPlay={setActiveSong}
+                    onPlay={handlePlaySong}
                     onPlayNext={addToQueue}
                   />
                 ))}
@@ -519,7 +796,7 @@ export function MusicAppShell() {
               <Separator />
               <div className="flex gap-2 p-4">
                 <Input
-                  placeholder="Send a message"
+                  placeholder={`Send a message up to ${entitlements.dmFileLimitMb} MB`}
                   value={messageDraft}
                   onChange={(event) => setMessageDraft(event.target.value)}
                   onKeyDown={(event) => {
@@ -537,7 +814,22 @@ export function MusicAppShell() {
         </section>
 
         <aside className="border-t border-border bg-card/80 p-4 lg:border-l lg:border-t-0">
-          <div className="flex items-center justify-between">
+          <ProfilePanel
+            profile={profile}
+            activeSong={activeSong}
+            usernameInput={usernameInput}
+            usernameStatus={usernameStatus}
+            bannerStatus={bannerStatus}
+            onUsernameChange={setUsernameInput}
+            onSaveUsername={saveUsername}
+            onBannerUpload={handleBannerUpload}
+          />
+
+          <div className="mt-4">
+            <MembershipPanel plan={profile.membershipPlan} onPlanChange={setMembershipPlan} />
+          </div>
+
+          <div className="mt-6 flex items-center justify-between">
             <h2 className="text-sm font-semibold">PEOPLE YOU SHOULD FOLLOW</h2>
             <Button variant="ghost" size="icon" aria-label="Add people">
               <UserPlus data-icon="inline-start" />
@@ -576,7 +868,7 @@ export function MusicAppShell() {
                   key={song.id}
                   type="button"
                   className="flex items-center gap-3 rounded-md text-left"
-                  onClick={() => setActiveSong(song)}
+                  onClick={() => handlePlaySong(song)}
                 >
                   <SongArtwork song={song} compact />
                   <div className="min-w-0">
@@ -598,11 +890,14 @@ export function MusicAppShell() {
               <p className="truncate text-sm font-semibold">{activeSong.title}</p>
               <Badge variant={sourceBadgeVariant(activeSong.source)}>{sourceLabels[activeSong.source]}</Badge>
             </div>
-            <p className="truncate text-sm text-muted-foreground">{activeSong.artist}</p>
+            <p className="truncate text-sm text-muted-foreground">
+              {activeSong.artist} - Last.fm now playing ready
+            </p>
             <div className="mt-2 h-1 rounded-full bg-muted">
               <div className="h-1 w-1/3 rounded-full bg-primary" />
             </div>
           </div>
+          {entitlements.hasAds ? <Badge variant="outline">Between-song ads enabled</Badge> : null}
           <Button size="icon" aria-label="Play or pause">
             <Pause data-icon="inline-start" />
           </Button>

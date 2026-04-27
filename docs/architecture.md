@@ -21,6 +21,7 @@ The app uses internal provider files so the product code calls one business acti
 - `lib/events` can move from local event records to PostHog.
 - `lib/search` can move from PostgreSQL search to OpenSearch.
 - `lib/queue` can move from local Redis to hosted Redis.
+- `lib/lastfm` can move from mocked local status to real Last.fm scrobbling once keys are configured.
 
 ## Product Rules Captured In The Foundation
 
@@ -30,3 +31,9 @@ The app uses internal provider files so the product code calls one business acti
 - Search is separated into From Your Personal Archive, Public Uploads, and Shared With You.
 - Messages can contain playable song cards.
 - Group chat rules and verification badge review are represented in the data model for later implementation.
+- Usernames are represented as unique profile identifiers.
+- Profile banners are limited to `.png`, `.jpg`, `.jpeg`, and `.gif`.
+- Membership entitlements separate Free and Plus behavior before billing is added.
+- Free members can receive banner and between-song ads.
+- Plus members are represented as ad-free, with doubled message file limits and custom emoji access.
+- Last.fm listening status supports musicapp now-playing first, then Last.fm recent-track fallback.

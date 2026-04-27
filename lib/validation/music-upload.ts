@@ -8,6 +8,11 @@ const musicFileSchema = z.object({
   size: z.number().positive(),
 });
 
+const imageFileSchema = z.object({
+  name: z.string().min(1),
+  size: z.number().positive(),
+});
+
 export function isAllowedMusicFileName(fileName: string) {
   const normalizedName = fileName.toLowerCase();
 
@@ -29,5 +34,29 @@ export function validateMusicUpload(input: unknown) {
   return {
     allowed: true,
     reason: "Music file type is allowed.",
+  };
+}
+
+export function isAllowedImageFileName(fileName: string) {
+  const normalizedName = fileName.toLowerCase();
+
+  return allowedImageExtensions.some((extension) =>
+    normalizedName.endsWith(extension),
+  );
+}
+
+export function validateSocialImageUpload(input: unknown) {
+  const file = imageFileSchema.parse(input);
+
+  if (!isAllowedImageFileName(file.name)) {
+    return {
+      allowed: false,
+      reason: "Only .png, .jpg, .jpeg, and .gif image files are allowed.",
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: "Image file type is allowed.",
   };
 }

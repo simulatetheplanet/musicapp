@@ -1,4 +1,34 @@
-import type { Message, PersonRecommendation, Song } from "@/lib/product-types";
+import type {
+  Message,
+  PersonRecommendation,
+  Song,
+  UserProfile,
+} from "@/lib/product-types";
+
+export const takenUsernames = ["minacoast", "rowankey", "sablefm", "musicapp"];
+
+export const currentUserProfile: UserProfile = {
+  id: "user-current",
+  username: "archivepilot",
+  displayName: "Archive Pilot",
+  bio: "Building a private archive of demos, loops, and shared finds.",
+  verified: false,
+  memberSince: "2025-04-15T00:00:00.000Z",
+  membershipPlan: "free",
+  bannerUrl: "linear-gradient(135deg, #1256ff 0%, #20a67a 55%, #ff6f61 100%)",
+  bannerFileType: "png",
+  lastFm: {
+    username: "archivepilot",
+    connected: true,
+    recentTrack: {
+      source: "lastfm",
+      title: "Midnight Transfer",
+      artist: "Sable FM",
+      isNowPlaying: false,
+      listenedAtLabel: "Most recent on Last.fm",
+    },
+  },
+};
 
 export const sampleSongs: Song[] = [
   {

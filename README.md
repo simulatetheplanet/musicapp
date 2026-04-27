@@ -23,6 +23,11 @@ Core product rules:
 - Music shared in messages must appear as a playable card, not a generic attachment.
 - Reactions can be added to messages.
 - Social media image files are separate from music uploads.
+- Usernames are unique and user-facing.
+- Profiles support banner customization with `.png`, `.jpg`, `.jpeg`, and `.gif`.
+- Last.fm can provide scrobbles, now-playing status, and most-recent-track fallback.
+- Free members see occasional ads.
+- Plus members are planned at `$5/month`, with ad-free listening, doubled message file limits, and custom emoji access.
 
 ## Free Development Stack
 
@@ -56,6 +61,7 @@ The app uses internal provider files so we can start free and switch later.
 | PostgreSQL search | OpenSearch later |
 | Local event logging | PostHog |
 | Local logs | Sentry and Axiom |
+| Empty Last.fm keys | Last.fm API app credentials |
 
 ## Required Software
 
@@ -140,6 +146,8 @@ NEXTAUTH_SECRET="replace-with-a-local-development-secret"
 STORAGE_PROVIDER="local"
 EMAIL_PROVIDER="local"
 ANALYTICS_PROVIDER="local"
+LASTFM_API_KEY=""
+LASTFM_SHARED_SECRET=""
 ```
 
 Why this exists:
@@ -149,6 +157,7 @@ Why this exists:
 - `NEXTAUTH_URL` tells auth flows where the local app runs.
 - `NEXTAUTH_SECRET` is required by the auth system.
 - Provider settings keep local development separate from future paid production tools.
+- Last.fm keys are optional until a real Last.fm app is registered.
 
 ## Start Local Services
 
@@ -227,6 +236,8 @@ When the app loads, you should see:
 - **Shared With You**
 - a **Messages** panel
 - a **PEOPLE YOU SHOULD FOLLOW** section
+- a profile card with **NOW PLAYING**
+- a Free or Plus membership panel
 - a bottom music player
 
 Basic manual checks:
@@ -238,6 +249,8 @@ Basic manual checks:
 5. Confirm the bottom music player updates.
 6. Right-click a message.
 7. Confirm reaction options appear.
+8. Change the profile username to a unique value.
+9. Switch the membership panel to Plus and confirm custom emoji access becomes available.
 
 ## Quality Checks
 
@@ -292,6 +305,8 @@ Playwright is used for repeatable product workflow testing. It is not required f
 | `app/` | Next.js app pages and layout |
 | `components/` | Reusable app UI and product screen components |
 | `lib/` | Business logic, service boundaries, validation, search, email, storage, and events |
+| `lib/lastfm/` | Last.fm API signing, now-playing, recent-track, and scrobble helpers |
+| `lib/membership/` | Free and Plus member limits and tenure badge rules |
 | `prisma/schema.prisma` | Main data model |
 | `prisma.config.ts` | Prisma 7 database configuration |
 | `docker-compose.yml` | Local PostgreSQL, Redis, and Mailpit setup |
@@ -403,6 +418,13 @@ Completed:
 - Tailwind styling
 - first interactive product shell
 - local upload validation
+- unique username validation
+- customizable profile banner validation
+- Last.fm-ready provider code
+- now-playing profile display
+- Free and Plus membership entitlement display
+- tenure badge calculation
+- free-member banner and between-song ad display
 - searchable sample songs
 - playable music cards
 - message panel with playable song card
@@ -417,6 +439,10 @@ Not completed yet:
 
 - real authentication screens
 - real email verification flow
+- real Last.fm OAuth connection screen
+- real scrobble job scheduling
+- real Plus payment flow
+- real ad campaign management
 - real file upload persistence through the UI
 - database migrations
 - real direct message persistence

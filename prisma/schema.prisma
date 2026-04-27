@@ -23,14 +23,34 @@ enum VerificationStatus {
   REJECTED
 }
 
+enum MembershipPlan {
+  FREE
+  PLUS
+}
+
+enum AdPlacement {
+  BANNER
+  BETWEEN_SONGS
+}
+
 model User {
   id               String    @id @default(cuid())
   name             String?
+  username         String?   @unique
   email            String    @unique
   emailVerified    DateTime?
   image            String?
   handle           String?   @unique
+  bio              String?
+  profileBannerUrl String?
+  profileBannerFileType String?
+  membershipPlan   MembershipPlan @default(FREE)
+  plusStartedAt    DateTime?
   verification     VerificationRequest?
+  lastFmConnection LastFmConnection?
+  listeningActivities ListeningActivity[]
+  adImpressions    AdImpression[]
+  customEmojis     CustomEmoji[]
   songs            Song[]
   sentMessages     Message[]
   conversationUsers ConversationUser[]
@@ -39,6 +59,55 @@ model User {
 
   accounts Account[]
   sessions Session[]
+}
+
+model LastFmConnection {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  username       String
+  sessionKey     String?  @db.Text
+  connectedAt    DateTime @default(now())
+  lastSyncedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ListeningActivity {
+  id              String   @id @default(cuid())
+  userId          String
+  songId          String?
+  source          String
+  title           String
+  artist          String
+  isNowPlaying    Boolean  @default(false)
+  lastFmScrobbled Boolean  @default(false)
+  startedAt       DateTime @default(now())
+  endedAt         DateTime?
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song Song? @relation(fields: [songId], references: [id], onDelete: SetNull)
+}
+
+model AdImpression {
+  id        String      @id @default(cuid())
+  userId    String
+  placement  AdPlacement
+  campaign  String
+  shownAt   DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CustomEmoji {
+  id         String   @id @default(cuid())
+  ownerId    String
+  name       String
+  storageKey String
+  publicUrl  String
+  fileType   String
+  createdAt  DateTime @default(now())
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 }
 
 model Account {
@@ -109,6 +178,7 @@ model Song {
   comments      Comment[]
   likes         SongLike[]
   reposts       Repost[]
+  listeningActivities ListeningActivity[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
